@@ -1,6 +1,7 @@
 import { app, query, update, sparqlEscapeUri } from "mu";
 import bodyParser from "body-parser";
-import { queryDefs, buildQuery } from "./queries";
+import { queryDefs, buildQuery } from "./lib/queries";
+import { runAsyncJob } from "./lib/job";
 import {
   BATCH_SIZE,
   SLEEP_BETWEEN_BATCHES,
