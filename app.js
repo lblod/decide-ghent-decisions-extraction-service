@@ -1,7 +1,6 @@
 import { app, query, update, sparqlEscapeUri } from "mu";
 import bodyParser from "body-parser";
-import { queryDefs, buildQuery } from "./lib/queries";
-import { runAsyncJob } from "./lib/job";
+import { queryDefs, buildQuery } from "./queries";
 import {
   BATCH_SIZE,
   SLEEP_BETWEEN_BATCHES,
@@ -44,7 +43,6 @@ app.post("/extract-subjects", async (req, res, next) => {
       // 3) Extract results (subject URIs) and complete triples with "a [RDF type]"
       // 4) Insert triples in correct output graph
       // 5) Increase limit/offset and keep on querying/inserting until done
-      // 6) Return 200 if all types have been looped over
     }
 
     return res.status(202).json({
