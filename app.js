@@ -40,10 +40,7 @@ app.post("/extract-subjects", async (req, res, next) => {
 
     if (typesToProcess.length) {
       extractSubjects(typesToProcess).catch((error) =>
-        console.error(
-          "[extract-subjects] Extraction flow failed unexpectedly.",
-          error
-        )
+        console.error("Extraction flow failed unexpectedly.", error)
       );
     }
 
@@ -69,17 +66,10 @@ app.post("/extract-subjects", async (req, res, next) => {
 
 async function extractSubjects(types) {
   for (const typeName of types) {
-    console.info(
-      `[extract-subjects] Received extraction request for type '${typeName}'.`
-    );
+    console.info(`Received extraction request for type '${typeName}'.`);
 
     const queryDefinition = queryDefs[typeName];
-    if (!queryDefinition) {
-      console.warn(
-        `[extract-subjects] Missing query definition for type '${typeName}', skipping.`
-      );
-      continue;
-    }
+    if (!queryDefinition) continue;
 
     let offset = 0;
     let hasMore = true;
@@ -92,7 +82,7 @@ async function extractSubjects(types) {
         offset
       );
       console.info(
-        `[extract-subjects] Executing query for type '${typeName}' (limit=${BATCH_SIZE}, offset=${offset}).`
+        `Executing query for type '${typeName}' (limit=${BATCH_SIZE}, offset=${offset}).`
       );
 
       const result = await querySudo(selectQuery);
@@ -101,9 +91,7 @@ async function extractSubjects(types) {
       const subjects = bindings
         .map((binding) => binding?.s?.value)
         .filter((value) => typeof value === "string" && value.length);
-      console.info(
-        `[extract-subjects] Found ${subjects.length} results for type '${typeName}'.`
-      );
+      console.info(`Found ${subjects.length} results for type '${typeName}'.`);
 
       await sleep();
 
@@ -116,31 +104,23 @@ async function extractSubjects(types) {
         const insertQuery = buildInsertQuery(triplesToInsert, targetGraph);
         await updateSudo(insertQuery);
         console.info(
-          `[extract-subjects] Inserted ${triplesToInsert.length} triples into graph '${targetGraph}'.`
+          `Inserted ${triplesToInsert.length} triples into graph '${targetGraph}'.`
         );
 
         await sleep();
-      } else {
-        console.info(
-          `[extract-subjects] No triples to insert for type '${typeName}' (offset ${offset}).`
-        );
       }
 
       if (bindings.length < BATCH_SIZE) hasMore = false;
       else offset += BATCH_SIZE;
     }
 
-    console.info(
-      `[extract-subjects] Finished extraction request for type '${typeName}'.`
-    );
+    console.info(`Finished extraction request for type '${typeName}'.`);
   }
 }
 
 async function sleep() {
   if (SLEEP_BETWEEN_BATCHES > 0) {
-    console.info(
-      `[extract-subjects] Sleeping for ${SLEEP_BETWEEN_BATCHES} ms.`
-    );
+    console.info(`Sleeping for ${SLEEP_BETWEEN_BATCHES} ms.`);
     return new Promise((resolve) => setTimeout(resolve, SLEEP_BETWEEN_BATCHES));
   }
 }
