@@ -96,15 +96,24 @@ async function extractSubjects(types) {
       );
 
       const result = await querySudo(sparql);
-      const rows = result?.results?.bindings ?? [];
-      console.info(
-        `[extract-subjects] Retrieved ${rows.length} rows for type '${typeName}'.`
-      );
+      const bindings = result?.results?.bindings ?? [];
 
-      // 3) Extract results (subject URIs) and complete triples with "a [RDF type]"
-      // 4) Insert triples in correct output graph
+      const subjects = bindings
+        .map((binding) => binding?.s?.value)
+        .filter((value) => typeof value === "string" && value.length);
 
-      if (rows.length < BATCH_SIZE) {
+      if (subjects.length) {
+        const triplesToInsert = subjects.map(
+          (subject) => `${sparqlEscapeUri(subject)} a ${queryDefinition.type} .`
+        );
+        console.info(
+          `[extract-subjects] Prepared ${triplesToInsert.length} triples for type '${typeName}'.`
+        );
+
+        // 4) Insert triples in correct output graph
+      }
+
+      if (bindings.length < BATCH_SIZE) {
         hasMore = false;
       } else {
         offset += BATCH_SIZE;
