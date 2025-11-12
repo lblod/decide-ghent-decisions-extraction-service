@@ -37,12 +37,13 @@ app.post("/extract-subjects", async (req, res, next) => {
       Object.prototype.hasOwnProperty.call(OUTPUT_GRAPHS, type)
     );
 
-    for (const typeName of typesToProcess) {
-      console.info(`Received extraction request for type '${typeName}'.`);
-      // 2) For each type, run query (from build_query, with INPUT_GRAPH and limit/offset)
-      // 3) Extract results (subject URIs) and complete triples with "a [RDF type]"
-      // 4) Insert triples in correct output graph
-      // 5) Increase limit/offset and keep on querying/inserting until done
+    if (typesToProcess.length) {
+      extractSubjects(typesToProcess).catch((error) =>
+        console.error(
+          "[extract-subjects] Extraction flow failed unexpectedly.",
+          error
+        )
+      );
     }
 
     return res.status(202).json({
@@ -64,3 +65,19 @@ app.post("/extract-subjects", async (req, res, next) => {
     return next(error);
   }
 });
+
+async function extractSubjects(types) {
+  for (const typeName of types) {
+    console.info(
+      `[extract-subjects] Received extraction request for type '${typeName}'.`
+    );
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    // 2) For each type, run query (from build_query, with INPUT_GRAPH and limit/offset)
+    // 3) Extract results (subject URIs) and complete triples with "a [RDF type]"
+    // 4) Insert triples in correct output graph
+    // 5) Increase limit/offset and keep on querying/inserting until done
+    console.info(
+      `[extract-subjects] Finished extraction request for type '${typeName}'.`
+    );
+  }
+}
