@@ -1,10 +1,9 @@
-export const BATCH_SIZE = parseInt(process.env.DCR_BATCH_SIZE) || 1000;
+export const BATCH_SIZE = parseInt(process.env.DCR_BATCH_SIZE) || 100;
 export const SLEEP_BETWEEN_BATCHES =
-  parseInt(process.env.DCR_SLEEP_BETWEEN_BATCHES) || 5;
+  parseInt(process.env.DCR_SLEEP_BETWEEN_BATCHES) || 1000;
 
 export const INPUT_GRAPH =
-  process.env.DCR_INPUT_GRAPH ||
-  `http://mu.semte.ch/graphs/oslo-decisions/landing`;
+  process.env.DCR_INPUT_GRAPH || `http://mu.semte.ch/graphs/oslo-decisions`;
 export const AGENDAPUNT_SUBJECTS_GRAPH =
   process.env.DCR_AGENDAPUNT_SUBJECTS_GRAPH ||
   `http://mu.semte.ch/graphs/oslo-decisions/ghent/agendapunt`;
