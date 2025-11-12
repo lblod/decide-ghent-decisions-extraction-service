@@ -1,7 +1,7 @@
 import { app, sparqlEscapeUri } from "mu";
 import { querySudo, updateSudo } from "@lblod/mu-auth-sudo";
 import bodyParser from "body-parser";
-import { queryDefs, buildQuery } from "./queries";
+import { queryDefs, buildSelectQuery, buildInsertQuery } from "./queries";
 import {
   BATCH_SIZE,
   SLEEP_BETWEEN_BATCHES,
@@ -85,7 +85,7 @@ async function extractSubjects(types) {
     let hasMore = true;
 
     while (hasMore) {
-      const sparql = buildQuery(
+      const selectQuery = buildSelectQuery(
         queryDefinition,
         INPUT_GRAPH,
         BATCH_SIZE,
@@ -95,22 +95,31 @@ async function extractSubjects(types) {
         `[extract-subjects] Executing query for type '${typeName}' (limit=${BATCH_SIZE}, offset=${offset}).`
       );
 
-      const result = await querySudo(sparql);
+      const result = await querySudo(selectQuery);
       const bindings = result?.results?.bindings ?? [];
 
       const subjects = bindings
         .map((binding) => binding?.s?.value)
         .filter((value) => typeof value === "string" && value.length);
+      console.info(
+        `[extract-subjects] Found ${subjects.length} results for type '${typeName}'.`
+      );
 
       if (subjects.length) {
         const triplesToInsert = subjects.map(
           (subject) => `${sparqlEscapeUri(subject)} a ${queryDefinition.type} .`
         );
-        console.info(
-          `[extract-subjects] Prepared ${triplesToInsert.length} triples for type '${typeName}'.`
-        );
 
-        // 4) Insert triples in correct output graph
+        const targetGraph = sparqlEscapeUri(OUTPUT_GRAPHS[typeName]);
+        const insertQuery = buildInsertQuery(triplesToInsert, targetGraph);
+        await updateSudo(insertQuery);
+        console.info(
+          `[extract-subjects] Inserted ${triplesToInsert.length} triples into graph '${targetGraph}'.`
+        );
+      } else {
+        console.info(
+          `[extract-subjects] No triples to insert for type '${typeName}' (offset ${offset}).`
+        );
       }
 
       if (bindings.length < BATCH_SIZE) {

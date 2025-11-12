@@ -59,28 +59,29 @@ export const queryDefs = {
   },
 };
 
-const buildPrefixBlock = () =>
-  Object.entries(prefixes)
+function buildPrefixBlock() {
+  return Object.entries(prefixes)
     .map(([prefix, uri]) => `PREFIX ${prefix}: <${uri}>`)
     .join("\n");
+}
 
-const buildValuesBlock = (varName) => {
+function buildValuesBlock(varName) {
   const lines = bestuursorganen
     .map((bestuursorgaan) => `<${bestuursorgaan}>`)
     .join("\n");
   return `VALUES ${varName} {\n${lines}\n}`;
-};
+}
 
-export const buildQuery = (queryType, graph, limit, offset) => {
+export function buildSelectQuery(type, graph, limit, offset) {
   const s = "?s";
   const prefixBlock = buildPrefixBlock();
 
-  const path = queryType.bestuursorgaanPropertyPath || "";
+  const path = type.bestuursorgaanPropertyPath || "";
   const pathBlock = path.length
     ? `${s} ${path} ?bestuursorgaan .\n${buildValuesBlock("?bestuursorgaan")}`
     : `${buildValuesBlock(s)}`;
 
-  const innerBody = `${s} a ${queryType.type} .\n${pathBlock}`;
+  const innerBody = `${s} a ${type.type} .\n${pathBlock}`;
 
   const graphWrapped = graph
     ? `GRAPH <${graph}> {\n${innerBody}\n}`
@@ -93,4 +94,15 @@ ${graphWrapped}
 }
 LIMIT ${limit}
 OFFSET ${offset}`;
-};
+}
+
+export function buildInsertQuery(triplesToInsert, graph) {
+  const prefixBlock = buildPrefixBlock();
+
+  return `${prefixBlock}
+INSERT DATA {
+  GRAPH ${graph} {
+    ${triplesToInsert.join("\n")}
+  }
+}`;
+}
