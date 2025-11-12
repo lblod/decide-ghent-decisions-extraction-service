@@ -105,6 +105,8 @@ async function extractSubjects(types) {
         `[extract-subjects] Found ${subjects.length} results for type '${typeName}'.`
       );
 
+      await sleep();
+
       if (subjects.length) {
         const triplesToInsert = subjects.map(
           (subject) => `${sparqlEscapeUri(subject)} a ${queryDefinition.type} .`
@@ -116,20 +118,16 @@ async function extractSubjects(types) {
         console.info(
           `[extract-subjects] Inserted ${triplesToInsert.length} triples into graph '${targetGraph}'.`
         );
+
+        await sleep();
       } else {
         console.info(
           `[extract-subjects] No triples to insert for type '${typeName}' (offset ${offset}).`
         );
       }
 
-      if (bindings.length < BATCH_SIZE) {
-        hasMore = false;
-      } else {
-        offset += BATCH_SIZE;
-        if (SLEEP_BETWEEN_BATCHES > 0) {
-          await sleep(SLEEP_BETWEEN_BATCHES * 1000);
-        }
-      }
+      if (bindings.length < BATCH_SIZE) hasMore = false;
+      else offset += BATCH_SIZE;
     }
 
     console.info(
@@ -138,4 +136,11 @@ async function extractSubjects(types) {
   }
 }
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function sleep() {
+  if (SLEEP_BETWEEN_BATCHES > 0) {
+    console.info(
+      `[extract-subjects] Sleeping for ${SLEEP_BETWEEN_BATCHES} ms.`
+    );
+    return new Promise((resolve) => setTimeout(resolve, SLEEP_BETWEEN_BATCHES));
+  }
+}
