@@ -1,4 +1,5 @@
-import { app, query, update, sparqlEscapeUri } from "mu";
+import { app, sparqlEscapeUri } from "mu";
+import { querySudo, updateSudo } from "@lblod/mu-auth-sudo";
 import bodyParser from "body-parser";
 import { queryDefs, buildQuery } from "./queries";
 import {
@@ -71,13 +72,52 @@ async function extractSubjects(types) {
     console.info(
       `[extract-subjects] Received extraction request for type '${typeName}'.`
     );
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-    // 2) For each type, run query (from build_query, with INPUT_GRAPH and limit/offset)
-    // 3) Extract results (subject URIs) and complete triples with "a [RDF type]"
-    // 4) Insert triples in correct output graph
-    // 5) Increase limit/offset and keep on querying/inserting until done
+
+    const queryDefinition = queryDefs[typeName];
+    if (!queryDefinition) {
+      console.warn(
+        `[extract-subjects] Missing query definition for type '${typeName}', skipping.`
+      );
+      continue;
+    }
+
+    let offset = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const sparql = buildQuery(
+        queryDefinition,
+        INPUT_GRAPH,
+        BATCH_SIZE,
+        offset
+      );
+      console.info(
+        `[extract-subjects] Executing query for type '${typeName}' (limit=${BATCH_SIZE}, offset=${offset}).`
+      );
+
+      const result = await querySudo(sparql);
+      const rows = result?.results?.bindings ?? [];
+      console.info(
+        `[extract-subjects] Retrieved ${rows.length} rows for type '${typeName}'.`
+      );
+
+      // 3) Extract results (subject URIs) and complete triples with "a [RDF type]"
+      // 4) Insert triples in correct output graph
+
+      if (rows.length < BATCH_SIZE) {
+        hasMore = false;
+      } else {
+        offset += BATCH_SIZE;
+        if (SLEEP_BETWEEN_BATCHES > 0) {
+          await sleep(SLEEP_BETWEEN_BATCHES * 1000);
+        }
+      }
+    }
+
     console.info(
       `[extract-subjects] Finished extraction request for type '${typeName}'.`
     );
   }
 }
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
