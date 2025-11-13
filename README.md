@@ -29,14 +29,14 @@ The endpoint replies immediately with `202 Accepted` and lists the sanitized typ
 
 ### Configuration
 
-| Env var                                         | Description                                            | Default                                                                     |
-| ----------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------- |
-| `DCR_BATCH_SIZE`                                | Batch size (`LIMIT`) for SPARQL queries.                 | 100                                                                       |
-| `DCR_SLEEP_BETWEEN_BATCHES`                     | Delay between SPARQL queries/inserts, in milliseconds. | 1000                                                                      |
-| `DCR_INPUT_GRAPH`                               | Source graph containing decisions data.                | `http://mu.semte.ch/graphs/oslo-decisions`                                  |
-| `DCR_AGENDAPUNT_SUBJECTS_GRAPH`                 | Target graph for `agendapunt` triples.                 | `http://mu.semte.ch/graphs/oslo-decisions/ghent/agendapunt`                 |
-| `DCR_BEHANDELING_VAN_AGENDAPUNT_SUBJECTS_GRAPH` | Target graph for `behandelingVanAgendapunt` triples.   | `http://mu.semte.ch/graphs/oslo-decisions/ghent/behandeling-van-agendapunt` |
-| `DCR_BESLUIT_SUBJECTS_GRAPH`                    | Target graph for `besluit` triples.                    | `http://mu.semte.ch/graphs/oslo-decisions/ghent/besluit`                    |
-| `DCR_BESTUURSORGAAN_SUBJECTS_GRAPH`             | Target graph for `bestuursorgaan` triples.             | `http://mu.semte.ch/graphs/oslo-decisions/ghent/bestuursorgaan`             |
-| `DCR_MANDATARIS_SUBJECTS_GRAPH`                 | Target graph for `mandataris` triples.                 | `http://mu.semte.ch/graphs/oslo-decisions/ghent/mandataris`                 |
-| `DCR_STEMMING_SUBJECTS_GRAPH`                   | Target graph for `stemming` triples.                   | `http://mu.semte.ch/graphs/oslo-decisions/ghent/stemming`                   |
+| Env var                                     | Description                                            | Default                                                                     |
+| ------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| `BATCH_SIZE`                                | Batch size (`LIMIT`) for SPARQL queries.                 | 100                                                                       |
+| `SLEEP_BETWEEN_BATCHES`                     | Delay between SPARQL queries/inserts, in milliseconds. | 1000                                                                      |
+| `INPUT_GRAPH`                               | Source graph containing decisions data.                | `http://mu.semte.ch/graphs/oslo-decisions`                                  |
+| `AGENDAPUNT_SUBJECTS_GRAPH`                 | Target graph for `agendapunt` triples.                 | `http://mu.semte.ch/graphs/oslo-decisions/ghent/agendapunt`                 |
+| `BEHANDELING_VAN_AGENDAPUNT_SUBJECTS_GRAPH` | Target graph for `behandelingVanAgendapunt` triples.   | `http://mu.semte.ch/graphs/oslo-decisions/ghent/behandeling-van-agendapunt` |
+| `BESLUIT_SUBJECTS_GRAPH`                    | Target graph for `besluit` triples.                    | `http://mu.semte.ch/graphs/oslo-decisions/ghent/besluit`                    |
+| `BESTUURSORGAAN_SUBJECTS_GRAPH`             | Target graph for `bestuursorgaan` triples.             | `http://mu.semte.ch/graphs/oslo-decisions/ghent/bestuursorgaan`             |
+| `MANDATARIS_SUBJECTS_GRAPH`                 | Target graph for `mandataris` triples.                 | `http://mu.semte.ch/graphs/oslo-decisions/ghent/mandataris`                 |
+| `STEMMING_SUBJECTS_GRAPH`                   | Target graph for `stemming` triples.                   | `http://mu.semte.ch/graphs/oslo-decisions/ghent/stemming`                   |
