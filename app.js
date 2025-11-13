@@ -1,7 +1,8 @@
 import { app, sparqlEscapeUri } from "mu";
 import { querySudo, updateSudo } from "@lblod/mu-auth-sudo";
 import bodyParser from "body-parser";
-import { queryDefs, buildSelectQuery, buildInsertQuery } from "./queries";
+import { buildSelectQuery, buildInsertQuery } from "./queries";
+import { queryDefs } from "./config/query-definitions";
 import {
   BATCH_SIZE,
   SLEEP_BETWEEN_BATCHES,
