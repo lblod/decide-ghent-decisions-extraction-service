@@ -7,22 +7,7 @@ import {
   BATCH_SIZE,
   SLEEP_BETWEEN_BATCHES,
   INPUT_GRAPH,
-  AGENDAPUNT_SUBJECTS_GRAPH,
-  BEHANDELING_VAN_AGENDAPUNT_SUBJECTS_GRAPH,
-  BESLUIT_SUBJECTS_GRAPH,
-  BESTUURSORGAAN_SUBJECTS_GRAPH,
-  MANDATARIS_SUBJECTS_GRAPH,
-  STEMMING_SUBJECTS_GRAPH,
 } from "./environment";
-
-const OUTPUT_GRAPHS = {
-  agendapunt: AGENDAPUNT_SUBJECTS_GRAPH,
-  behandelingVanAgendapunt: BEHANDELING_VAN_AGENDAPUNT_SUBJECTS_GRAPH,
-  besluit: BESLUIT_SUBJECTS_GRAPH,
-  bestuursorgaan: BESTUURSORGAAN_SUBJECTS_GRAPH,
-  mandataris: MANDATARIS_SUBJECTS_GRAPH,
-  stemming: STEMMING_SUBJECTS_GRAPH,
-};
 
 app.use(
   bodyParser.json({
@@ -35,8 +20,10 @@ app.use(
 app.post("/extract-subjects", async (req, res, next) => {
   try {
     const { types } = req.body || {};
-    const typesToProcess = (Array.isArray(types) ? types : []).filter((type) =>
-      Object.prototype.hasOwnProperty.call(OUTPUT_GRAPHS, type)
+    const typesToProcess = (Array.isArray(types) ? types : []).filter(
+      (type) =>
+        Object.prototype.hasOwnProperty.call(queryDefs, type) &&
+        queryDefs[type]?.outputGraph
     );
 
     if (typesToProcess.length) {
@@ -73,6 +60,12 @@ async function extractSubjects(types) {
     if (!queryDefinition) {
       continue;
     }
+    if (!queryDefinition.outputGraph) {
+      console.warn(
+        `Skipping type '${typeName}' because no output graph is configured.`
+      );
+      continue;
+    }
 
     let offset = 0;
     let hasMore = true;
@@ -103,7 +96,7 @@ async function extractSubjects(types) {
           (subject) => `${sparqlEscapeUri(subject)} a ${queryDefinition.type} .`
         );
 
-        const targetGraph = sparqlEscapeUri(OUTPUT_GRAPHS[typeName]);
+        const targetGraph = sparqlEscapeUri(queryDefinition.outputGraph);
         const insertQuery = buildInsertQuery(triplesToInsert, targetGraph);
         await updateSudo(insertQuery);
         console.info(
