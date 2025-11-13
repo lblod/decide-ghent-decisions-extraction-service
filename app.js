@@ -69,7 +69,9 @@ async function extractSubjects(types) {
     console.info(`Received extraction request for type '${typeName}'.`);
 
     const queryDefinition = queryDefs[typeName];
-    if (!queryDefinition) continue;
+    if (!queryDefinition) {
+      continue;
+    }
 
     let offset = 0;
     let hasMore = true;
@@ -110,8 +112,11 @@ async function extractSubjects(types) {
         await sleep();
       }
 
-      if (bindings.length < BATCH_SIZE) hasMore = false;
-      else offset += BATCH_SIZE;
+      if (bindings.length < BATCH_SIZE) {
+        hasMore = false;
+      } else {
+        offset += BATCH_SIZE;
+      }
     }
 
     console.info(`Finished extraction request for type '${typeName}'.`);
