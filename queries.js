@@ -1,5 +1,7 @@
 import { bestuursorganen } from "./config/bestuursorganen";
 import { prefixes } from "./config/query-definitions";
+import { sparqlEscapeUri } from "mu";
+import { INPUT_GRAPH } from "./environment";
 
 function buildPrefixBlock() {
   return Object.entries(prefixes)
@@ -14,36 +16,38 @@ function buildValuesBlock(varName) {
   return `VALUES ${varName} {\n${lines}\n}`;
 }
 
-export function buildSelectQuery(type, graph, limit, offset) {
+export function buildSelectQuery(queryDefinition, limit, offset) {
   const s = "?s";
   const prefixBlock = buildPrefixBlock();
+  const inputGraph = sparqlEscapeUri(INPUT_GRAPH);
 
-  const path = type.bestuursorgaanPropertyPath || "";
+  const path = queryDefinition.bestuursorgaanPropertyPath || "";
   const pathBlock = path.length
     ? `${s} ${path} ?bestuursorgaan .\n${buildValuesBlock("?bestuursorgaan")}`
     : `${buildValuesBlock(s)}`;
 
-  const innerBody = `${s} a ${type.type} .\n${pathBlock}`;
-
-  const graphWrapped = graph
-    ? `GRAPH <${graph}> {\n${innerBody}\n}`
-    : innerBody;
-
   return `${prefixBlock}
 SELECT DISTINCT ${s}
 WHERE {
-${graphWrapped}
+  GRAPH ${inputGraph} {
+    ${s} a ${queryDefinition.type} .
+    ${pathBlock}
+  }
 }
 LIMIT ${limit}
 OFFSET ${offset}`;
 }
 
-export function buildInsertQuery(triplesToInsert, graph) {
+export function buildInsertQuery(queryDefinition, subjectsToInsert) {
   const prefixBlock = buildPrefixBlock();
+  const outputGraph = sparqlEscapeUri(queryDefinition.outputGraph);
+  const triplesToInsert = subjectsToInsert.map(
+    (subject) => `${sparqlEscapeUri(subject)} a ${queryDefinition.type} .`
+  );
 
   return `${prefixBlock}
 INSERT DATA {
-  GRAPH ${graph} {
+  GRAPH ${outputGraph} {
     ${triplesToInsert.join("\n")}
   }
 }`;

@@ -1,13 +1,9 @@
-import { app, sparqlEscapeUri } from "mu";
+import { app } from "mu";
 import { querySudo, updateSudo } from "@lblod/mu-auth-sudo";
 import bodyParser from "body-parser";
 import { buildSelectQuery, buildInsertQuery } from "./queries";
 import { queryDefs } from "./config/query-definitions";
-import {
-  BATCH_SIZE,
-  SLEEP_BETWEEN_BATCHES,
-  INPUT_GRAPH,
-} from "./environment";
+import { BATCH_SIZE, SLEEP_BETWEEN_BATCHES } from "./environment";
 
 app.use(
   bodyParser.json({
@@ -27,7 +23,7 @@ app.post("/extract-subjects", async (req, res, next) => {
     );
 
     if (typesToProcess.length) {
-      extractSubjects(typesToProcess).catch((error) =>
+      extractAndInsertSubjects(typesToProcess).catch((error) =>
         console.error("Extraction flow failed unexpectedly.", error)
       );
     }
@@ -52,69 +48,78 @@ app.post("/extract-subjects", async (req, res, next) => {
   }
 });
 
-async function extractSubjects(types) {
+async function extractAndInsertSubjects(types) {
   for (const typeName of types) {
-    console.info(`Received extraction request for type '${typeName}'.`);
-
-    const queryDefinition = queryDefs[typeName];
-    if (!queryDefinition) {
-      continue;
-    }
-    if (!queryDefinition.outputGraph) {
-      console.warn(
-        `Skipping type '${typeName}' because no output graph is configured.`
-      );
-      continue;
-    }
-
-    let offset = 0;
-    let hasMore = true;
-
-    while (hasMore) {
-      const selectQuery = buildSelectQuery(
-        queryDefinition,
-        INPUT_GRAPH,
-        BATCH_SIZE,
-        offset
-      );
-      console.info(
-        `Executing query for type '${typeName}' (limit=${BATCH_SIZE}, offset=${offset}).`
-      );
-
-      const result = await querySudo(selectQuery);
-      const bindings = result?.results?.bindings ?? [];
-
-      const subjects = bindings
-        .map((binding) => binding?.s?.value)
-        .filter((value) => typeof value === "string" && value.length);
-      console.info(`Found ${subjects.length} results for type '${typeName}'.`);
-
-      await sleep();
-
-      if (subjects.length) {
-        const triplesToInsert = subjects.map(
-          (subject) => `${sparqlEscapeUri(subject)} a ${queryDefinition.type} .`
-        );
-
-        const targetGraph = sparqlEscapeUri(queryDefinition.outputGraph);
-        const insertQuery = buildInsertQuery(triplesToInsert, targetGraph);
-        await updateSudo(insertQuery);
-        console.info(
-          `Inserted ${triplesToInsert.length} triples into graph '${targetGraph}'.`
-        );
-
-        await sleep();
-      }
-
-      if (bindings.length < BATCH_SIZE) {
-        hasMore = false;
-      } else {
-        offset += BATCH_SIZE;
-      }
-    }
-
-    console.info(`Finished extraction request for type '${typeName}'.`);
+    await extractAndInsertSubjectsForType(typeName);
   }
+}
+
+async function extractAndInsertSubjectsForType(typeName) {
+  const queryDefinition = queryDefs[typeName];
+  if (!queryDefinition) return;
+
+  console.info(`Received extraction request for type '${typeName}'.`);
+
+  let offset = 0;
+  let hasMore = true;
+
+  while (hasMore) {
+    const { subjects, hasMoreResults } = await fetchSubjectsBatch(
+      queryDefinition,
+      offset
+    );
+
+    await sleep();
+
+    if (subjects.length) {
+      await insertSubjectsBatch(queryDefinition, subjects);
+      await sleep();
+    }
+
+    if (!hasMoreResults) {
+      hasMore = false;
+    } else {
+      offset += BATCH_SIZE;
+    }
+  }
+
+  console.info(`Finished extraction request for type '${typeName}'.`);
+}
+
+async function fetchSubjectsBatch(queryDefinition, offset) {
+  console.info(
+    `Executing query for type '${queryDefinition.type}' (limit=${BATCH_SIZE}, offset=${offset}).`
+  );
+
+  const selectQuery = buildSelectQuery(queryDefinition, BATCH_SIZE, offset);
+  const result = await querySudo(selectQuery);
+  const bindings = result?.results?.bindings ?? [];
+
+  const subjects = bindings
+    .map((binding) => binding?.s?.value)
+    .filter((value) => typeof value === "string" && value.length);
+
+  console.info(
+    `Found ${subjects.length} result(s) for type '${queryDefinition.type}'.`
+  );
+
+  return {
+    subjects,
+    hasMoreResults: bindings.length === BATCH_SIZE,
+  };
+}
+
+async function insertSubjectsBatch(queryDefinition, subjects) {
+  console.info(
+    `Executing insert for type '${queryDefinition.type}' (amount=${subjects.length}).`
+  );
+
+  const insertQuery = buildInsertQuery(queryDefinition, subjects);
+  await updateSudo(insertQuery);
+
+  console.info(
+    `Inserted ${subjects.length} triple(s) into graph '${queryDefinition.outputGraph}'.`
+  );
 }
 
 async function sleep() {
