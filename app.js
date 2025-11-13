@@ -12,7 +12,7 @@ import {
   BESTUURSORGAAN_SUBJECTS_GRAPH,
   MANDATARIS_SUBJECTS_GRAPH,
   STEMMING_SUBJECTS_GRAPH,
-} from "./config";
+} from "./environment";
 
 const OUTPUT_GRAPHS = {
   agendapunt: AGENDAPUNT_SUBJECTS_GRAPH,
